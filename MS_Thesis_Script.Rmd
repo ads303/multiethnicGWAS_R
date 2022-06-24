@@ -1,0 +1,287 @@
+---
+title: "Aditya Sriram MS Thesis: Code"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+setwd("~/Documents/Thesis/")
+library(tidyverse)
+library(data.table)
+library(qqman)
+library(dplyr)
+library(ggplot2)
+# install.packages("sjPlot")
+# install.packages("nloptr")
+library(sjPlot)
+```
+
+```{r}
+#Loading ALL the Data: 
+
+#ALL AFRICAN GWAS DATA
+afr_data <- fread("UKBB_covid19_AFRtested_061821.txt")
+afr_data <- as.data.frame(afr_data)
+afr_data <- afr_data %>% rename(BP = POS)
+afr_data <- afr_data %>% rename(P = p.value)
+afr_data <- afr_data %>% rename(SNP = rsid)
+
+#re-name for Manhattan Plot conditions
+afr_data$CHR[afr_data$CHR == "X"] <- "23"
+unique(afr_data$CHR)
+sapply(afr_data, class)
+afr_data$CHR <- as.numeric(afr_data$CHR)
+
+#head(afr_data)
+#head <- head(afr_data)
+
+#check if European top SNPs/Genes are in African data
+
+#any(afr_data$SNP=="rs73062389")
+afr_topSNP_SLC6A20 <- afr_data[which(afr_data$SNP == "rs73062389"), ]
+afr_topSNP_ABO <- afr_data[which(afr_data$SNP == "rs9411378"), ]
+afr_topSNP_LZTFL1 <- afr_data[which(afr_data$SNP == "rs73062394"), ]
+
+
+#ALL EUROPEAN
+eur_data <- fread("UKBB_covid19_EURtested_061821.txt")
+eur_data <- as.data.frame(eur_data)
+eur_data <- eur_data %>% rename(BP = POS)
+eur_data <- eur_data %>% rename(P = p.value)
+eur_data <- eur_data %>% rename(SNP = rsid)
+
+eur_data$CHR[eur_data$CHR == "X"] <- "23"
+unique(eur_data$CHR)
+sapply(eur_data, class)
+eur_data$CHR <- as.numeric(eur_data$CHR)
+
+#check top SNPs
+#any(eur_data$SNP=="rs73062389")
+eur_topSNP_SLC6A20 <- eur_data[which(eur_data$SNP == "rs73062389"), ]
+eur_topSNP_ABO <- eur_data[which(eur_data$SNP == "rs9411378"), ]
+eur_topSNP_LZTFL1 <- eur_data[which(eur_data$SNP == "rs73062394"), ]
+
+#head(eur_data)
+#head <- head(eur_data)
+
+#ALL SOUTH ASIAN
+sas_data <- fread("UKBB_covid19_SAStested_061821.txt")
+sas_data <- as.data.frame(sas_data)
+sas_data <- sas_data %>% rename(BP = POS)
+sas_data <- sas_data %>% rename(P = p.value)
+sas_data <- sas_data %>% rename(SNP = rsid)
+
+sas_data$CHR[sas_data$CHR == "X"] <- "23"
+unique(sas_data$CHR)
+sapply(sas_data, class)
+sas_data$CHR <- as.numeric(sas_data$CHR)
+
+#check top SNPs
+#any(sas_data$SNP=="rs73062389")
+sas_topSNP_SLC6A20 <- sas_data[which(sas_data$SNP == "rs73062389"), ]
+sas_topSNP_ABO <- sas_data[which(sas_data$SNP == "rs9411378"), ]
+sas_topSNP_LZTFL1 <- sas_data[which(sas_data$SNP == "rs73062394"), ]
+
+#head(sas_data)
+#head <- head(sas_data)
+
+```
+
+
+```{r}
+# comparing the effect sizes / adding the confidence intervals / plotting 
+
+#SLC6A20
+
+rownames(afr_topSNP_SLC6A20)
+rownames(eur_topSNP_SLC6A20)
+rownames(sas_topSNP_SLC6A20)
+
+rownames(afr_topSNP_SLC6A20) <- c("AFR_19417806")
+rownames(eur_topSNP_SLC6A20) <- c("EUR_23100158")
+rownames(sas_topSNP_SLC6A20) <- c("SAS_15222741")
+
+init_join_SLC6A20 <- full_join(afr_topSNP_SLC6A20,eur_topSNP_SLC6A20)
+full_join_SLC6A20 <- full_join(init_join_SLC6A20, sas_topSNP_SLC6A20)
+rownames(full_join_SLC6A20) <- c("AFR_19417806","EUR_23100158","SAS_15222741")
+
+full_join_SLC6A20 <- tibble::rownames_to_column(full_join_SLC6A20, "row_names")
+full_join_SLC6A20 <- full_join_SLC6A20 %>% rename(ethnicity = row_names)
+
+#ABO
+rownames(afr_topSNP_ABO)
+rownames(eur_topSNP_ABO)
+rownames(sas_topSNP_ABO)
+
+rownames(afr_topSNP_ABO) <- c("AFR_32127460")
+rownames(eur_topSNP_ABO) <- c("EUR_37991904")
+rownames(sas_topSNP_ABO) <- c("SAS_25123189")
+
+init_join_ABO <- full_join(afr_topSNP_ABO,eur_topSNP_ABO)
+full_join_ABO <- full_join(init_join_ABO, sas_topSNP_ABO)
+rownames(full_join_ABO) <- c("AFR_32127460","EUR_37991904","SAS_25123189")
+
+full_join_ABO <- tibble::rownames_to_column(full_join_ABO, "row_names")
+full_join_ABO <- full_join_ABO %>% rename(ethnicity = row_names)
+
+#LZTFL1
+rownames(afr_topSNP_LZTFL1)
+rownames(eur_topSNP_LZTFL1)
+rownames(sas_topSNP_LZTFL1)
+
+rownames(afr_topSNP_LZTFL1) <- c("AFR_19417841")
+rownames(eur_topSNP_LZTFL1) <- c("EUR_23100211")
+rownames(sas_topSNP_LZTFL1) <- c("SAS_15222771")
+
+init_join_LZTFL1 <- full_join(afr_topSNP_LZTFL1,eur_topSNP_LZTFL1)
+full_join_LZTFL1 <- full_join(init_join_LZTFL1, sas_topSNP_LZTFL1)
+rownames(full_join_LZTFL1) <- c("AFR_19417841","EUR_23100211","SAS_15222771")
+
+full_join_LZTFL1 <- tibble::rownames_to_column(full_join_LZTFL1, "row_names")
+full_join_LZTFL1 <- full_join_LZTFL1 %>% rename(ethnicity = row_names)
+
+
+#name changes for the plotting of ethnicities and beta values
+full_join_ABO_plotting <- full_join_ABO 
+full_join_SLC6A20_plotting <- full_join_SLC6A20
+full_join_LZTFL1_plotting <- full_join_LZTFL1
+
+rownames(full_join_ABO_plotting) <- full_join_ABO_plotting$ethnicity
+rownames(full_join_SLC6A20_plotting) <- full_join_SLC6A20_plotting$ethnicity
+rownames(full_join_LZTFL1_plotting) <- full_join_LZTFL1_plotting$ethnicity
+
+rownames(full_join_ABO_plotting) <- c("AFR", "EUR", "SAS")
+rownames(full_join_SLC6A20_plotting) <- c("AFR", "EUR", "SAS")
+rownames(full_join_LZTFL1_plotting) <- c("AFR", "EUR", "SAS")
+
+full_join_ABO_plotting$ethnicity <- rownames(full_join_ABO_plotting)
+full_join_SLC6A20_plotting$ethnicity <- rownames(full_join_SLC6A20_plotting)
+full_join_LZTFL1_plotting$ethnicity <- rownames(full_join_LZTFL1_plotting)
+
+
+#confidence interval critical values
+alpha_EUR = 5*(10^-08)
+crit_value_EUR = qnorm(1-(alpha_EUR/2))
+
+alpha_AFR = 0.05/3
+crit_value_AFR = qnorm(1-(alpha_AFR/2))
+
+alpha_SAS = 0.05/3
+crit_value_SAS = qnorm(1-(alpha_SAS/2))
+
+#confidence interval SE values
+SE_ABO_AFR = full_join_ABO_plotting$SE[1]
+SE_ABO_EUR = full_join_ABO_plotting$SE[2]
+SE_ABO_SAS = full_join_ABO_plotting$SE[3]
+
+SE_LZTFL1_AFR = full_join_LZTFL1_plotting$SE[1]
+SE_LZTFL1_EUR = full_join_LZTFL1_plotting$SE[2]
+SE_LZTFL1_SAS = full_join_LZTFL1_plotting$SE[3]
+
+SE_SLC6A20_AFR = full_join_SLC6A20_plotting$SE[1]
+SE_SLC6A20_EUR = full_join_SLC6A20_plotting$SE[2]
+SE_SLC6A20_SAS = full_join_SLC6A20_plotting$SE[3]
+
+#confidence interval calculations (crit.value * SE)
+CI_ABO_AFR = crit_value_AFR * SE_ABO_AFR
+CI_ABO_EUR = crit_value_EUR * SE_ABO_EUR
+CI_ABO_SAS = crit_value_SAS * SE_ABO_SAS
+
+CI_LZTFL1_AFR = crit_value_AFR * SE_LZTFL1_AFR
+CI_LZTFL1_EUR = crit_value_EUR * SE_LZTFL1_EUR
+CI_LZTFL1_SAS = crit_value_SAS * SE_LZTFL1_SAS
+
+CI_SLC6A20_AFR = crit_value_AFR * SE_SLC6A20_AFR
+CI_SLC6A20_EUR = crit_value_EUR * SE_SLC6A20_EUR
+CI_SLC6A20_SAS = crit_value_SAS * SE_SLC6A20_SAS
+
+
+CI_ABO = c(CI_ABO_AFR, CI_ABO_EUR, CI_ABO_SAS)
+CI_LZTFL1 = c(CI_LZTFL1_AFR, CI_LZTFL1_EUR, CI_LZTFL1_SAS)
+CI_SLC6A20 = c(CI_SLC6A20_AFR, CI_SLC6A20_EUR, CI_SLC6A20_SAS)
+
+#plots for each SNP
+#SLC6A20
+SLC6A20_effect_plot <- ggplot() + 
+  geom_pointrange(data = full_join_SLC6A20_plotting, mapping = aes(color=ethnicity, x = ethnicity, y = BETA, ymin = as.numeric(BETA) - CI_SLC6A20, ymax = as.numeric(BETA) + CI_SLC6A20), size=1, shape=16) + labs(x = "Ethnicity", y = "Effect Size (BETA)", title = "Effect Size Comparison for SLC6A20: rs73062389")
+
+#ABO
+ABO_effect_plot <- ggplot() + 
+  geom_pointrange(data = full_join_ABO_plotting, mapping = aes(color=ethnicity, x = ethnicity, y = BETA, ymin = as.numeric(BETA) - CI_ABO, ymax = as.numeric(BETA) + CI_ABO), size=1, shape=16) + labs(x = "Ethnicity", y = "Effect Size (BETA)", title = "Effect Size Comparison for ABO: rs9411378")
+
+#LZTFL1
+LZTFL1_effect_plot <- ggplot() + 
+  geom_pointrange(data = full_join_LZTFL1_plotting, mapping = aes(color=ethnicity, x = ethnicity, y = BETA, ymin = as.numeric(BETA) - CI_LZTFL1, ymax = as.numeric(BETA) + CI_LZTFL1), size=1, shape=16) + labs(x = "Ethnicity", y = "Effect Size (BETA)", title = "Effect Size Comparison for LZTFL1: rs73062394") 
+
+
+SLC6A20_effect_plot
+ABO_effect_plot
+LZTFL1_effect_plot
+
+#saving the plots to computer
+# png(file="~/Documents/Thesis/final_thesis_plots/SLC6A20_effect_plot.png",
+# width=1000, height=1000)
+# SLC6A20_effect_plot
+# dev.off()
+```
+```{r}
+#creating the Manhattan and QQ plots
+manhattanplot_AFR <- manhattan(afr_data, main = "GWAS of COVID-19 Susceptibility in AFR Population", col = c("blue4", "orange3"))
+qq(afr_data$P, main = "QQ Plot of African GWAS p-values")
+chisq <- qchisq(1-afr_data$P,1)
+lambdaGC_afr <- median(chisq)/qchisq(0.5,1)
+lambdaGC_afr
+
+manhattanplot_EUR <- manhattan(eur_data, main = "GWAS of COVID-19 Susceptibility in EUR Population", col = c("blue4", "orange3"))
+qq(eur_data$P, main = "QQ Plot of European GWAS p-values")
+chisq <- qchisq(1-eur_data$P,1)
+lambdaGC_eur <- median(chisq)/qchisq(0.5,1)
+lambdaGC_eur
+
+manhattanplot_SAS <- manhattan(sas_data, main = "GWAS of COVID-19 Susceptibility in SAS Population", col = c("blue4", "orange3"))
+qq(sas_data$P, main = "QQ Plot of South Asian GWAS p-values")
+chisq <- qchisq(1-sas_data$P,1)
+lambdaGC_sas <- median(chisq)/qchisq(0.5,1)
+lambdaGC_sas
+```
+
+
+
+
+```{r}
+# just the top SNPs for each ethnic group 
+#afr
+top_afr <- read.delim("top_UKBB_covid19_AFRtested_061821.txt")
+top_afr <- arrange(top_afr, p.value)
+head(top_afr, 100)
+
+#eur
+top_eur <- read.delim("top_UKBB_covid19_EURtested_061821.txt")
+top_eur <- arrange(top_eur, p.value)
+head(top_eur, 100)
+
+#sas
+top_sas <- read.delim("top_UKBB_covid19_SAStested_061821.txt")
+top_sas <- arrange(top_sas, p.value)
+head(top_sas, 100)
+
+```
+
+
+```{r}
+#creating the beta effect tables for the thesis paper
+tab_df(full_join_SLC6A20_plotting)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
